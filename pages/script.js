@@ -1,5 +1,19 @@
-// Workers API 地址
-const WORKERS_API = 'http://localhost:8787';
+// 根据当前环境确定API地址
+const getApiBaseUrl = () => {
+    // 检查是否在本地开发环境
+    const isLocalhost = window.location.hostname === 'localhost' || 
+                       window.location.hostname === '127.0.0.1';
+    
+    // 如果是本地开发环境，使用本地worker地址
+    if (isLocalhost) {
+        return 'http://localhost:8787';
+    }
+    
+    // 生产环境使用相对路径，会自动指向部署的worker地址
+    return '';
+};
+
+const WORKERS_API = getApiBaseUrl();
 
 async function fetchRSSData() {
     const loadingElement = document.getElementById('loading');
