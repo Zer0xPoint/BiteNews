@@ -332,7 +332,7 @@ export default {
 
         const headers = createHeaders(env.API_KEY);
         const aiResponse = await axios.post(
-          env.API_BASE_URL + '@cf/meta/llama-3.1-8b-instruct',
+          env.API_BASE_URL + '@cf/meta/llama-3.2-3b-instruct',
           {
             messages: [
               { 
