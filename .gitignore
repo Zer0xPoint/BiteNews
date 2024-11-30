@@ -6,6 +6,9 @@ node_modules/
 .env.local
 .env.*.local
 
+# Development environment variables
+.dev.vars
+
 # IDE files
 .idea/
 .vscode/
