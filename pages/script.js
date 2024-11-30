@@ -1,3 +1,6 @@
+// Workers API 地址
+const WORKERS_API = 'http://localhost:8787';
+
 async function fetchRSSData() {
     const loadingElement = document.getElementById('loading');
     const errorElement = document.getElementById('error');
@@ -8,13 +11,23 @@ async function fetchRSSData() {
         errorElement.style.display = 'none';
         itemsSection.innerHTML = '';
         
-        const response = await fetch('/api/rss');
+        console.log('Fetching RSS data from:', `${WORKERS_API}/api/rss`);
+        const response = await fetch(`${WORKERS_API}/api/rss`);
+        console.log('Response status:', response.status);
+        console.log('Response headers:', Object.fromEntries(response.headers));
+        
         if (!response.ok) {
-            throw new Error('Failed to fetch RSS data');
+            const errorText = await response.text();
+            console.error('Error response body:', errorText);
+            throw new Error(`Failed to fetch RSS data: ${response.status} ${response.statusText}`);
         }
         
         const data = await response.json();
+        console.log('Received data type:', typeof data);
+        console.log('Is array?', Array.isArray(data));
+        
         if (!Array.isArray(data)) {
+            console.error('Invalid data received:', data);
             throw new Error('Invalid data format received');
         }
         
@@ -46,7 +59,7 @@ async function fetchSummary() {
     const summaryContent = document.getElementById('summary-content');
     
     try {
-        const response = await fetch('/api/summary');
+        const response = await fetch(`${WORKERS_API}/api/summary`);
         if (!response.ok) {
             throw new Error('Failed to fetch summary');
         }
