@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RSS Summary</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="main-content">
+        <div class="content-box">
+            <h1>RSS Feed</h1>
+            <div id="loading" class="loading">Loading RSS feed...</div>
+            <div id="error" class="error-message" style="display: none;"></div>
+            <div class="items-section"></div>
+        </div>
+    </div>
+    <div class="summary-section content-box">
+        <h2>RSS Summary</h2>
+        <div id="summary-content">
+            <div class="spinner"></div>
+            <div class="loading">Generating summary...</div>
+        </div>
+    </div>
+    <script src="script.js"></script>
+</body>
+</html>
