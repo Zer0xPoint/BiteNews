@@ -1,0 +1,27 @@
+{
+  "name": "hacker-news-rss-worker",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "deploy": "wrangler deploy",
+    "dev": "wrangler dev",
+    "load-env": "dotenv config",
+    "start": "wrangler dev",
+    "test": "jest"
+  },
+  "devDependencies": {
+    "@babel/core": "^7.22.5",
+    "@babel/preset-env": "^7.22.5",
+    "babel-jest": "^29.7.0",
+    "jest": "^29.7.0",
+    "node-fetch": "^3.3.2",
+    "wrangler": "^3.0.0"
+  },
+  "dependencies": {
+    "axios": "^1.6.2",
+    "dotenv": "^16.3.1",
+    "feedparser": "^2.2.10",
+    "xml2js": "^0.6.2"
+  }
+}

@@ -1,0 +1,7 @@
+name = "hacker-news-rss-worker"
+main = "src/index.js"
+compatibility_date = "2024-09-23"
+compatibility_flags = ["nodejs_compat"]
+
+[vars]
+HACKER_NEWS_RSS_URL = "https://news.ycombinator.com/rss"
