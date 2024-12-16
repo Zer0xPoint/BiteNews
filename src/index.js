@@ -23,31 +23,36 @@ async function fetchRSSData(env) {
 
   // Fetch and parse new data
   const headers = createHeaders(env.API_KEY);
-  const response = await axios.get(env.HACKER_NEWS_RSS_URL, { headers });
-  const rssText = await response.data;
-  const parsedRss = await parseStringPromise(rssText, {
-    explicitArray: false,
-    trim: true
-  });
+  try {
+    const response = await axios.get(env.HACKER_NEWS_RSS_URL, { headers });
+    const rssText = await response.data;
+    const parsedRss = await parseStringPromise(rssText, {
+      explicitArray: false,
+      trim: true
+    });
 
-  const items = Array.isArray(parsedRss.rss.channel.item) 
-    ? parsedRss.rss.channel.item 
-    : [parsedRss.rss.channel.item];
+    const items = Array.isArray(parsedRss.rss.channel.item) 
+      ? parsedRss.rss.channel.item 
+      : [parsedRss.rss.channel.item];
 
-  // Format items with all necessary information
-  const formattedItems = items.map(item => ({
-    title: item.title,
-    link: item.link,
-    description: item.description,
-    pubDate: new Date(item.pubDate).toLocaleString(),
-    comments: item.comments
-  }));
+    // Format items with all necessary information
+    const formattedItems = items.map(item => ({
+      title: item.title,
+      link: item.link,
+      description: item.description,
+      pubDate: new Date(item.pubDate).toLocaleString(),
+      comments: item.comments
+    }));
 
-  // Update cache
-  rssCache.data = formattedItems;
-  rssCache.timestamp = now;
+    // Update cache
+    rssCache.data = formattedItems;
+    rssCache.timestamp = now;
 
-  return formattedItems;
+    return formattedItems;
+  } catch (error) {
+    console.error('Error fetching RSS data:', error);
+    throw new Error('Failed to fetch RSS data');
+  }
 }
 
 // Function to extract only titles from RSS data
@@ -76,7 +81,7 @@ export default {
         });
       } catch (error) {
         console.error('Error fetching RSS:', error);
-        return new Response(JSON.stringify({ error: error.message }), {
+        return new Response(JSON.stringify({ error: 'Failed to fetch RSS data' }), {
           status: 500,
           headers: {
             'Content-Type': 'application/json',
@@ -98,7 +103,7 @@ export default {
         });
       } catch (error) {
         console.error('Error fetching titles:', error);
-        return new Response(JSON.stringify({ error: error.message }), {
+        return new Response(JSON.stringify({ error: 'Failed to fetch titles' }), {
           status: 500,
           headers: {
             'Content-Type': 'application/json',
@@ -114,15 +119,16 @@ export default {
         const titles = extractTitles(items);
 
         const headers = createHeaders(env.API_KEY);
-        const aiResponse = await axios.post(
-          env.API_BASE_URL + '@cf/meta/llama-3.2-3b-instruct',
-          {
-            messages: [
-              { 
-                role: "system", 
-                content: `Analyze these Hacker News titles and create a structured summary following this markdown format:
+        try {
+          const aiResponse = await axios.post(
+            env.API_BASE_URL + '@cf/meta/llama-3.2-3b-instruct',
+            {
+              messages: [
+                { 
+                  role: "system", 
+                  content: `Analyze these Hacker News titles and create a structured summary following this markdown format:
 
-                (Summary all the titles in 2-3 sentences here)
+                  (Summary all the titles in 2-3 sentences here)
 
 # Categories
 
@@ -151,50 +157,62 @@ export default {
 - Headline 12
 
 (Each Categories should have 2-3 related titles. Use markdown formatting.)`
-              },
-              { 
-                role: "user", 
-                content: titles.join("\n")
-              }
-            ]
-          },
-          { headers }
-        );
+                },
+                { 
+                  role: "user", 
+                  content: titles.join("\n")
+                }
+              ]
+            },
+            { headers }
+          );
 
-        let summaryText;
-        if (aiResponse.data && aiResponse.data.result && aiResponse.data.result.response) {
-          summaryText = aiResponse.data.result.response;
-        } else if (typeof aiResponse.data === 'string') {
-          summaryText = aiResponse.data;
-        } else {
-          console.error('Unexpected AI response:', JSON.stringify(aiResponse.data, null, 2));
-          throw new Error('Unable to generate summary. Unexpected API response format.');
-        }
-
-        // Convert markdown to HTML with specific formatting
-        summaryText = summaryText
-          .replace(/^# (.*$)/gm, '<h2>$1</h2>') // Convert headers
-          .replace(/^- (.*$)/gm, '<li>$1</li>') // Convert list items
-          .replace(/\n\n/g, '</ul><ul>') // Separate lists
-          .replace(/(<li>.*<\/li>)/g, '<ul>$1</ul>') // Wrap lists in ul tags
-          .replace(/<\/ul><ul>/g, '') // Clean up adjacent lists
-          .replace(/\n/g, ''); // Remove remaining newlines
-
-        return new Response(JSON.stringify({ 
-          summary: summaryText,
-          timestamp: new Date().toISOString()
-        }), {
-          headers: {
-            'Content-Type': 'application/json',
-            'Access-Control-Allow-Origin': '*'
+          let summaryText;
+          if (aiResponse.data && aiResponse.data.result && aiResponse.data.result.response) {
+            summaryText = aiResponse.data.result.response;
+          } else if (typeof aiResponse.data === 'string') {
+            summaryText = aiResponse.data;
+          } else {
+            console.error('Unexpected AI response:', JSON.stringify(aiResponse.data, null, 2));
+            throw new Error('Unable to generate summary. Unexpected API response format.');
           }
-        });
+
+          // Convert markdown to HTML with specific formatting
+          summaryText = summaryText
+            .replace(/^# (.*$)/gm, '<h2>$1</h2>') // Convert headers
+            .replace(/^- (.*$)/gm, '<li>$1</li>') // Convert list items
+            .replace(/\n\n/g, '</ul><ul>') // Separate lists
+            .replace(/(<li>.*<\/li>)/g, '<ul>$1</ul>') // Wrap lists in ul tags
+            .replace(/<\/ul><ul>/g, '') // Clean up adjacent lists
+            .replace(/\n/g, ''); // Remove remaining newlines
+
+          return new Response(JSON.stringify({ 
+            summary: summaryText,
+            timestamp: new Date().toISOString()
+          }), {
+            headers: {
+              'Content-Type': 'application/json',
+              'Access-Control-Allow-Origin': '*'
+            }
+          });
+        } catch (error) {
+          console.error('Summary generation error:', error);
+          return new Response(JSON.stringify({ 
+            error: 'Failed to generate summary',
+            details: 'Unexpected API response format',
+            timestamp: new Date().toISOString()
+          }), {
+            status: 500,
+            headers: {
+              'Content-Type': 'application/json',
+              'Access-Control-Allow-Origin': '*'
+            }
+          });
+        }
       } catch (error) {
-        console.error('Summary generation error:', error);
+        console.error('Error fetching RSS:', error);
         return new Response(JSON.stringify({ 
-          error: error.message,
-          details: 'Failed to generate summary',
-          timestamp: new Date().toISOString()
+          error: 'Failed to fetch RSS data' 
         }), {
           status: 500,
           headers: {
